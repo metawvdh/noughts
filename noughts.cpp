@@ -1,171 +1,141 @@
 #include <vector>
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
-#include <iomanip>
-using std::setw;
+
 
 class Grid{
     public:
         //Member functions declaration
-        void print_vector();
-        void make_move(int player_num);
         void start_game();
-        void check_win1();
-        void check_win2();
-    
-    //private:
-        vector< vector<int> > state;
-        int game_won;
-
-
+        
         //Constructor definition
         Grid()
-            : state(3, vector<int>(3)), game_won(0)
+            : board(3, vector<int>(3)), _game_won(0)
         {
-            print_vector();
+            print_grid();
         }
-
+    
+    private:
+        vector< vector<int> > board;
+        int _game_won;
+        
+        //Member functions declaration
+        void print_grid();
+        int input(string type, int var);
+        void make_move(int player_num);
+        void check_win(int player_num);
+        string print_cell(int row, int column);   
 };
 
-
 //Member functions definitions
-void Grid::print_vector(){
-    for (int i=0; i<3; i++){
-        for (int j=0; j<3; j++){
-            //print out the row and column of the vector
-            cout << "[" << i << "][" << j << "]: " << state[i][j];
-            //some formatting
-            if (j==2){
-                cout << endl;
-            }
-            else{
-                cout << setw(7);
-            }
-        }
+
+//Print the board as a 3 by 3 grid
+void Grid::print_grid(){
+    cout << print_cell(0,0) << " | " << print_cell(0,1) << " | " << print_cell(0,2) << endl;
+    cout << "---------" << endl;
+    cout << print_cell(1,0) << " | " << print_cell(1,1) << " | " << print_cell(1,2) << endl;
+    cout << "---------" << endl;
+    cout << print_cell(2,0) << " | " << print_cell(2,1) << " | " << print_cell(2,2) << endl;
+}
+
+//Determine the relevant characters to print in the grid
+string Grid::print_cell(int row, int column){
+    if (board[row][column] == 0){
+        return " ";
+    }
+    if (board[row][column] == 1){
+        return "O";
+    }
+    if (board[row][column] == 2){
+        return "X";
     }
 }
 
+//Notifies relevant player, asks for row and column input, checks the move is valid and prints new state of the board.
 void Grid::make_move(int player_num){
-    int row;
-    int column;
+    int r;
+    int c; 
 
     //Notify which player has a turn
     cout << "It is player " << player_num << "'s turn." << endl;
-    //Ask for row input
-    cout << "Which row do you want to play?";
-    cin >> row;
-    if(cin.fail()){
-        cin.clear();//clear the buffer.
-        cin.ignore(999, '\n');
-        return make_move(player_num);}
-    //check if the row is within the range of the grid.
-    if(row!=0 && row!=1 && row!=2){
-        cout << "That row does not exist. Please choose a different row." << endl;
-        return make_move(player_num);
-    }
-    //Ask for column input
-    cout << "Which column do you want to play?";
-    cin >> column;
-    if(cin.fail()){
-        cin.clear();//clear the buffer.
-        cin.ignore(999, '\n');
-        return make_move(player_num);}
-    //check if the column is within the range of the grid.
-    if(column!=0 && column!=1 && column!=2){
-        cout << "That column does not exist. Please choose a different column." << endl;
-        return make_move(player_num);
-    }
+    
+    r = input("row", r);
+    c = input("column", c);
 
     //Check that the chosen field has not already been assigned a value.
-    if(state[row][column]!=0){
-        cout << "This field has already been chosen! Choose another field." << endl;
-        return make_move(player_num);
+    if(board[r][c] != 0)
+    {
+      cout << "This field has already been chosen! Choose another field." << endl;
+      return make_move(player_num);
     }
     //Change the chosen value to the player number.
-    state[row][column] = player_num;
-    //Show the game state after the move.
-    print_vector();
- 
+    board[r][c] = player_num;
+    //Show the game board after the move.
+    print_grid();
 }
 
+//Prompts player to input a move, checks the input is valid, returns chosen row/column.
+int Grid::input(string type, int var){
+    //Ask for row input
+    cout << "Which " << type << " do you want to play?";
+    cin >> var;
+    //check if the input is an int.
+    if(cin.fail()){
+        cin.clear();//clear the buffer.
+        cin.ignore(999, '\n');
+        cout << "Input not valid. Please input an integer." << endl;
+        return input(type, var);
+        }
+    //check if the row is within the range of the grid.
+    if(var != 0 && var != 1 && var != 2){
+        cout << "That row does not exist. Please choose a different row." << endl;
+        return input(type, var);
+    }
+    return var;
+} 
+
+//Keeps track of number of turns to infer stalmate, assigns turns to players and checks for a winner.
 void Grid::start_game(){
     int turn_count = 0;
+
     while(turn_count<9){
-        if(game_won == 1){
+        if(_game_won == 1){
             cout << "Congratulations Player 1! You won!" << endl;
             return;
         }
-        else if(game_won ==2){
+        else if(_game_won ==2){
             cout << "Congratulations Player 2! You won!" << endl;
             return;
         }
-        else if(turn_count<9){
-            make_move(turn_count%2+1);
-            check_win1();
-            check_win2();
+        else {
+            int player_num = turn_count%2+1;
+            make_move(player_num);
+            check_win(player_num);
             turn_count++;
         }
     }
-    //if 9 moves have been made and no game_won, then stalmate.
+    //if 9 moves have been made and no _game_won, then stalmate.
     cout << "stalmate!" << endl;
 }
 
-void Grid::check_win1(){
-    //game states if Player 1 wins
-    if(state[0][0]==1 && state[0][1]==1 && state[0][2]==1){
-        game_won = 1;
-    }
-    else if(state[1][0]==1 && state[1][1]==1 && state[1][2]==1){
-        game_won = 1;
-    }
-    else if(state[2][0]==1 && state[2][1]==1 && state[2][2]==1){
-        game_won = 1;
-    }
-    else if(state[0][0]==1 && state[1][0]==1 && state[2][0]==1){
-        game_won = 1;
-    }
-    else if(state[0][1]==1 && state[1][1]==1 && state[2][1]==1){
-        game_won = 1;
-    }
-    else if(state[0][2]==1 && state[1][2]==1 && state[2][2]==1){
-        game_won = 1;
-    }
-    else if(state[0][0]==1 && state[1][1]==1 && state[2][2]==1){
-        game_won = 1;
-    }
-    else if(state[0][2]==1 && state[1][1]==1 && state[2][0]==1){
-        game_won = 1;
-    }
-}
-void Grid::check_win2(){
-    //game states if Player 2 wins
-    if(state[0][0]==2 && state[0][1]==2 && state[0][2]==2){
-        game_won = 2;
-    }
-    else if(state[1][0]==2 && state[1][1]==2 && state[1][2]==2){
-        game_won = 2;
-    }
-    else if(state[2][0]==2 && state[2][1]==2 && state[2][2]==2){
-        game_won = 2;
-    }
-    else if(state[0][0]==2 && state[1][0]==2 && state[2][0]==2){
-        game_won = 2;
-    }
-    else if(state[0][1]==2 && state[1][1]==2 && state[2][1]==2){
-        game_won = 2;
-    }
-    else if(state[0][2]==2 && state[1][2]==2 && state[2][2]==2){
-        game_won = 2;
-    }
-    else if(state[0][0]==2 && state[1][1]==2 && state[2][2]==2){
-        game_won = 2;
-    }
-    else if(state[0][2]==2 && state[1][1]==2 && state[2][0]==2){
-        game_won = 2;
-    }
+//Check whether the board is in one of the winning states, and if so, set _game_won to the player who won the game.
+void Grid::check_win(int player_num){
+    //game boards if winner
+    if((board[0][0]==player_num && board[0][1]==player_num && board[0][2]==player_num) ||
+      (board[1][0]==player_num && board[1][1]==player_num && board[1][2]==player_num) ||
+      (board[2][0]==player_num && board[2][1]==player_num && board[2][2]==player_num) ||
+      (board[0][0]==player_num && board[1][0]==player_num && board[2][0]==player_num) ||
+      (board[0][1]==player_num && board[1][1]==player_num && board[2][1]==player_num) ||
+      (board[0][2]==player_num && board[1][2]==player_num && board[2][2]==player_num) ||
+      (board[0][0]==player_num && board[1][1]==player_num && board[2][2]==player_num) ||
+      (board[0][2]==player_num && board[1][1]==player_num && board[2][0]==player_num)) {
+          _game_won = player_num;
+      }
 }
 
+//Runs the game.
 int main(){
     Grid NewGrid; //Declare a new grid of type Grid
     
